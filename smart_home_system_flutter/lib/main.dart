@@ -15,6 +15,7 @@ class SmartHomeApp extends StatelessWidget {
   }
 }
 
+// ---- HomeLayoutPage (main editor screen) ----
 class HomeLayoutPage extends StatefulWidget {
   const HomeLayoutPage({Key? key}) : super(key: key);
 
@@ -22,8 +23,9 @@ class HomeLayoutPage extends StatefulWidget {
   State<HomeLayoutPage> createState() => _HomeLayoutPageState();
 }
 
-// Simple Room model expressed in grid units
+// Room model expressed in grid units with id to identify movable items
 class Room {
+  final int id;
   final int gridX;
   final int gridY;
   final int gridW;
@@ -32,6 +34,7 @@ class Room {
   final bool isCircle;
 
   Room({
+    required this.id,
     required this.gridX,
     required this.gridY,
     required this.gridW,
@@ -40,19 +43,19 @@ class Room {
     this.isCircle = false,
   });
 
-  Room copyWith({int? gridX, int? gridY}) {
+  Room copyWith({int? id, int? gridX, int? gridY, int? gridW, int? gridH, Color? color, bool? isCircle}) {
     return Room(
+      id: id ?? this.id,
       gridX: gridX ?? this.gridX,
       gridY: gridY ?? this.gridY,
-      gridW: gridW,
-      gridH: gridH,
-      color: color,
-      isCircle: isCircle,
+      gridW: gridW ?? this.gridW,
+      gridH: gridH ?? this.gridH,
+      color: color ?? this.color,
+      isCircle: isCircle ?? this.isCircle,
     );
   }
 }
 
-// Small helper for BFS points
 class _GridPoint {
   final int x;
   final int y;
@@ -63,62 +66,139 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
   final int cellSize = 40; // pixels per grid cell
   final List<Room> _placedRooms = [];
   final GlobalKey _canvasKey = GlobalKey(); // used to convert global->local coordinates
+  int _nextRoomId = 1;
+
+  // track moving room id while the user drags an already placed room
+  int? _movingRoomId;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Floor Plan Editor')),
-      body: Row(
+      body: Column(
         children: [
-          // Sidebar toolbox
+          // Top toolbox / draggable icons row
           Container(
-            width: 120,
+            height: 120,
             color: Colors.grey[200],
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDraggableRoom('Square', Colors.blue, 2, 2),
-                const SizedBox(height: 18),
+                const SizedBox(width: 18),
                 _buildDraggableRoom('Rectangle', Colors.green, 3, 2),
-                const SizedBox(height: 18),
+                const SizedBox(width: 18),
                 _buildDraggableRoom('Circle', Colors.orange, 2, 2, isCircle: true),
+                const SizedBox(width: 18),
+                // you can add more toolbox items here
+                Expanded(child: Container()), // pushes toolbox items to the left
               ],
             ),
           ),
 
-          // Canvas
+          // Canvas area (fills remaining vertical space)
           Expanded(
             child: Container(
-              key: _canvasKey,
               color: Colors.grey[100],
-              child: Stack(
-                children: [
-                  // grid background
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: GridPainter(cellSize: cellSize),
-                  ),
+              child: LayoutBuilder(builder: (context, constraints) {
+                return Container(
+                  key: _canvasKey,
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Stack(
+                    children: [
+                      // grid background
+                      CustomPaint(
+                        size: Size.infinite,
+                        painter: GridPainter(cellSize: cellSize),
+                      ),
 
-                  // placed rooms
-                  ..._placedRooms.map((r) {
-                    return Positioned(
-                      left: r.gridX * cellSize.toDouble(),
-                      top: r.gridY * cellSize.toDouble(),
-                      child: r.isCircle
-                          ? Container(
-                              width: r.gridW * cellSize.toDouble(),
-                              height: r.gridH * cellSize.toDouble(),
-                              decoration: BoxDecoration(color: r.color, shape: BoxShape.circle),
-                            )
-                          : Container(
-                              width: r.gridW * cellSize.toDouble(),
-                              height: r.gridH * cellSize.toDouble(),
-                              color: r.color,
-                            ),
-                    );
-                  }).toList(),
-                ],
-              ),
+                      // placed rooms (now movable)
+                      ..._placedRooms.map((r) {
+                        return Positioned(
+                          left: r.gridX * cellSize.toDouble(),
+                          top: r.gridY * cellSize.toDouble(),
+                          child: GestureDetector(
+                            onPanStart: (details) {
+                              // start moving this room
+                              _movingRoomId = r.id;
+                            },
+                            onPanUpdate: (details) {
+                              // while dragging, update the room position snapped to grid
+                              final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                              if (canvasBox == null) return;
+
+                              final local = canvasBox.globalToLocal(details.globalPosition);
+
+                              final int maxCols = (canvasBox.size.width / cellSize).floor();
+                              final int maxRows = (canvasBox.size.height / cellSize).floor();
+
+                              int gridX = (local.dx / cellSize).floor();
+                              int gridY = (local.dy / cellSize).floor();
+
+                              // clamp
+                              final int maxStartX = (maxCols - r.gridW) >= 0 ? (maxCols - r.gridW) : 0;
+                              final int maxStartY = (maxRows - r.gridH) >= 0 ? (maxRows - r.gridH) : 0;
+                              if (gridX < 0) gridX = 0;
+                              if (gridY < 0) gridY = 0;
+                              if (gridX > maxStartX) gridX = maxStartX;
+                              if (gridY > maxStartY) gridY = maxStartY;
+
+                              // update the room in the placed list (live preview while dragging)
+                              setState(() {
+                                final idx = _placedRooms.indexWhere((p) => p.id == r.id);
+                                if (idx != -1) {
+                                  _placedRooms[idx] = _placedRooms[idx].copyWith(gridX: gridX, gridY: gridY);
+                                }
+                              });
+                            },
+                            onPanEnd: (details) {
+                              // on end, fit the room into the nearest available spot (avoid overlaps),
+                              // ignoring itself when checking collisions.
+                              final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+                              if (canvasBox == null) {
+                                _movingRoomId = null;
+                                return;
+                              }
+
+                              final int maxCols = (canvasBox.size.width / cellSize).floor();
+                              final int maxRows = (canvasBox.size.height / cellSize).floor();
+
+                              final idx = _placedRooms.indexWhere((p) => p.id == r.id);
+                              if (idx != -1) {
+                                final current = _placedRooms[idx];
+                                final fitted = _fitRoom(
+                                  current,
+                                  maxCols,
+                                  maxRows,
+                                  ignoreId: current.id,
+                                );
+                                setState(() {
+                                  _placedRooms[idx] = fitted;
+                                });
+                              }
+
+                              _movingRoomId = null;
+                            },
+                            child: r.isCircle
+                                ? Container(
+                                    width: r.gridW * cellSize.toDouble(),
+                                    height: r.gridH * cellSize.toDouble(),
+                                    decoration: BoxDecoration(color: r.color, shape: BoxShape.circle),
+                                  )
+                                : Container(
+                                    width: r.gridW * cellSize.toDouble(),
+                                    height: r.gridH * cellSize.toDouble(),
+                                    color: r.color,
+                                  ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                );
+              }),
             ),
           ),
         ],
@@ -126,12 +206,13 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     );
   }
 
+  // Top toolbox draggable builder (unchanged mostly, now used in a Row)
   Widget _buildDraggableRoom(String label, Color color, int gridW, int gridH, {bool isCircle = false}) {
     final double px = gridW * cellSize.toDouble();
     final double py = gridH * cellSize.toDouble();
 
     return Draggable<Room>(
-      data: Room(gridX: 0, gridY: 0, gridW: gridW, gridH: gridH, color: color, isCircle: isCircle),
+      data: Room(id: -1, gridX: 0, gridY: 0, gridW: gridW, gridH: gridH, color: color, isCircle: isCircle),
       feedback: Material(
         type: MaterialType.transparency,
         child: Container(
@@ -182,7 +263,16 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
         if (gridX > maxStartX) gridX = maxStartX;
         if (gridY > maxStartY) gridY = maxStartY;
 
-        Room newRoom = Room(gridX: gridX, gridY: gridY, gridW: gridW, gridH: gridH, color: color, isCircle: isCircle);
+        // create new room with unique id
+        final newRoom = Room(
+          id: _nextRoomId++,
+          gridX: gridX,
+          gridY: gridY,
+          gridW: gridW,
+          gridH: gridH,
+          color: color,
+          isCircle: isCircle,
+        );
 
         // find nearest available position using a grid-aware search
         final fitted = _fitRoom(newRoom, maxCols, maxRows);
@@ -195,7 +285,8 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
   }
 
   // Returns a Room placed at the nearest available grid cell within bounds
-  Room _fitRoom(Room room, int maxCols, int maxRows) {
+  // ignoreId: an optional room id to ignore during overlap checks (useful when moving an existing room)
+  Room _fitRoom(Room room, int maxCols, int maxRows, {int? ignoreId}) {
     bool overlaps(Room a, Room b) {
       return !(a.gridX + a.gridW <= b.gridX ||
           b.gridX + b.gridW <= a.gridX ||
@@ -208,6 +299,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
       if (r.gridX + r.gridW > maxCols) return false;
       if (r.gridY + r.gridH > maxRows) return false;
       for (var placed in _placedRooms) {
+        if (ignoreId != null && placed.id == ignoreId) continue;
         if (overlaps(r, placed)) return false;
       }
       return true;
@@ -226,7 +318,15 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
 
     while (queue.isNotEmpty) {
       final p = queue.removeAt(0);
-      final candidate = Room(gridX: p.x, gridY: p.y, gridW: room.gridW, gridH: room.gridH, color: room.color, isCircle: room.isCircle);
+      final candidate = Room(
+        id: room.id,
+        gridX: p.x,
+        gridY: p.y,
+        gridW: room.gridW,
+        gridH: room.gridH,
+        color: room.color,
+        isCircle: room.isCircle,
+      );
       if (fits(candidate)) return candidate;
 
       for (var d in directions) {
@@ -244,7 +344,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     }
 
     // fallback if nothing found: place at (0,0)
-    return Room(gridX: 0, gridY: 0, gridW: room.gridW, gridH: room.gridH, color: room.color, isCircle: room.isCircle);
+    return Room(id: room.id, gridX: 0, gridY: 0, gridW: room.gridW, gridH: room.gridH, color: room.color, isCircle: room.isCircle);
   }
 }
 
