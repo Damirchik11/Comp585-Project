@@ -23,45 +23,6 @@ class HomeLayoutPage extends StatefulWidget {
   State<HomeLayoutPage> createState() => _HomeLayoutPageState();
 }
 
-// Room model expressed in grid units with id to identify movable items
-class Room {
-  final int id;
-  final int gridX;
-  final int gridY;
-  final int gridW;
-  final int gridH;
-  final Color color;
-  final bool isCircle;
-
-  Room({
-    required this.id,
-    required this.gridX,
-    required this.gridY,
-    required this.gridW,
-    required this.gridH,
-    required this.color,
-    this.isCircle = false,
-  });
-
-  Room copyWith({int? id, int? gridX, int? gridY, int? gridW, int? gridH, Color? color, bool? isCircle}) {
-    return Room(
-      id: id ?? this.id,
-      gridX: gridX ?? this.gridX,
-      gridY: gridY ?? this.gridY,
-      gridW: gridW ?? this.gridW,
-      gridH: gridH ?? this.gridH,
-      color: color ?? this.color,
-      isCircle: isCircle ?? this.isCircle,
-    );
-  }
-}
-
-class _GridPoint {
-  final int x;
-  final int y;
-  _GridPoint(this.x, this.y);
-}
-
 class _HomeLayoutPageState extends State<HomeLayoutPage> {
   final int cellSize = 40; // pixels per grid cell
   final List<Room> _placedRooms = [];
@@ -359,28 +320,4 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     // fallback if nothing found: place at (0,0)
     return Room(id: room.id, gridX: 0, gridY: 0, gridW: room.gridW, gridH: room.gridH, color: room.color, isCircle: room.isCircle);
   }
-}
-
-// Simple grid painter
-class GridPainter extends CustomPainter {
-  final int cellSize;
-  GridPainter({required this.cellSize});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey[300]!
-      ..strokeWidth = 0.5;
-
-    for (double x = 0; x < size.width; x += cellSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y < size.height; y += cellSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant GridPainter old) => old.cellSize != cellSize;
 }
