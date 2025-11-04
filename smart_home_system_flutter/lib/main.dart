@@ -197,14 +197,13 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                 : Container(
                                     width: r.gridW * cellSize.toDouble(),
                                     height: r.gridH * cellSize.toDouble(),
-                                    color: r.color,
-                                    // Add visual feedback when moving
-                                    decoration: _movingRoomId == r.id
-                                      ? BoxDecoration(
-                                          color: r.color,
-                                          border: Border.all(color: Colors.white, width: 3),
-                                        )
-                                      : null, 
+                                    decoration: BoxDecoration(
+                                      color: r.color,
+                                      // Add visual feedback when moving
+                                      border: _movingRoomId == r.id
+                                        ? Border.all(color: Colors.white, width: 3)
+                                        : null,
+                                    ),
                                   ),
                           ),
                         );
