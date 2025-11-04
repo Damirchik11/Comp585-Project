@@ -5,7 +5,7 @@ import '../widgets/app_drawer.dart';
 
 // ---- HomeLayoutPage (main editor screen) ----
 class HomeLayoutPage extends StatefulWidget {
-  const HomeLayoutPage({Key? key}) : super(key: key);
+  const HomeLayoutPage({super.key});
 
   @override
   State<HomeLayoutPage> createState() => _HomeLayoutPageState();
@@ -60,7 +60,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
             child: Container(
               color: Colors.grey[100],
               child: LayoutBuilder(builder: (context, constraints) {
-                return Container(
+                return SizedBox(
                   key: _canvasKey,
                   width: double.infinity,
                   height: double.infinity,
@@ -165,7 +165,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                   ),
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 );
@@ -284,7 +284,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     final startY = room.gridY.clamp(0, (maxRows - room.gridH) >= 0 ? (maxRows - room.gridH) : 0);
 
     final queue = <GridPoint>[GridPoint(startX, startY)];
-    final visited = <String>{'${startX}_${startY}'};
+    final visited = <String>{'${startX}_$startY'};
     final directions = [GridPoint(1, 0), GridPoint(0, 1), GridPoint(-1, 0), GridPoint(0, -1)];
 
     while (queue.isNotEmpty) {

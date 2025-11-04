@@ -8,7 +8,7 @@ import 'pages/auth_page.dart';
 void main() => runApp(const SmartHomeApp());
 
 class SmartHomeApp extends StatelessWidget {
-  const SmartHomeApp({Key? key}) : super(key: key);
+  const SmartHomeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
