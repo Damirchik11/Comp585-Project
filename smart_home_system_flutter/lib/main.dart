@@ -4,6 +4,7 @@ import 'pages/devices_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/tutorial_page.dart';
 import 'pages/auth_page.dart';
+import 'pages/create_account.dart';
 
 void main() => runApp(const SmartHomeApp());
 
@@ -15,13 +16,15 @@ class SmartHomeApp extends StatelessWidget {
     return MaterialApp(
       title: 'Smart Home Layout',
       theme: ThemeData(primarySwatch: Colors.blue),
-      initialRoute: '/',
+      initialRoute: '/auth',
       routes: {
-        '/': (context) => const HomeLayoutPage(),
+        '/auth': (context) => const AuthPage(),
+        '/layout': (context) => const HomeLayoutPage(),
         '/devices': (context) => const DevicesPage(),
         '/settings': (context) => const SettingsPage(),
         '/tutorial': (context) => const TutorialPage(),
-        '/auth': (context) => const AuthPage(),
+        '/createAcct': (context) => const CreateAccountPage(),
+        
       },
     );
   }

@@ -32,7 +32,7 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Room Layout'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/');
+              Navigator.pushReplacementNamed(context, '/layout');
             },
           ),
           ListTile(

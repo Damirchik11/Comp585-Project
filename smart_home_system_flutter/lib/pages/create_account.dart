@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 
-
-class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+class CreateAccountPage extends StatefulWidget {
+  const CreateAccountPage({super.key});
 
   @override
-  State<AuthPage> createState() => _AuthPageState();
+  State<CreateAccountPage> createState() => _CreateAcctState();
 }
 
-class _AuthPageState extends State<AuthPage> {
+
+class _CreateAcctState extends State<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: const Text('Create Account'),
         automaticallyImplyLeading: false,
-      ),
+        ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -33,6 +34,19 @@ class _AuthPageState extends State<AuthPage> {
                   const Icon(Icons.home_outlined, size: 80),
                   const SizedBox(height: 24),
                   TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Profile Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Required';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'Email',
@@ -43,11 +57,24 @@ class _AuthPageState extends State<AuthPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
                       labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Required';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Reenter Password',
                       border: OutlineInputBorder(),
                     ),
                     obscureText: true,
@@ -62,12 +89,12 @@ class _AuthPageState extends State<AuthPage> {
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
                     ),
-                    child: Text('Login')
+                    child: Text('Create Account')
                   ),
                   TextButton(
-                    child: Text('Need an account? Sign up'),
+                    child: Text('Already have an account? Login'),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/createAcct');
+                      Navigator.pushReplacementNamed(context, '/auth');
                     },
                   ),
                 ],
