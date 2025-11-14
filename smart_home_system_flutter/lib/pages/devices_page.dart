@@ -1,82 +1,256 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
+import '../models/device.dart';
+import '../services/bluetooth_service.dart';
+import '../services/storage_service.dart';
 
 class DevicesPage extends StatefulWidget {
-  const DevicesPage({Key? key}) : super(key: key);
+  const DevicesPage({super.key});
 
   @override
   State<DevicesPage> createState() => _DevicesPageState();
 }
 
-class _DevicesPageState extends State<DevicesPage> {
-  final List<Map<String, dynamic>> _devices = [];
+class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin {
+  final BluetoothService _bluetoothService = BluetoothService();
+  final StorageService _storageService = StorageService();
+  
+  List<SmartDevice> _availableDevices = [];
+  List<SmartDevice> _pairedDevices = [];
   bool _isScanning = false;
+  final bool _bluetoothEnabled = false;
+  late TabController _tabController;
+  
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _initBluetooth();
+    _loadPairedDevices();
+  }
+  
+  Future<void> _initBluetooth() async {
+    final hasPermissions = await _bluetoothService.requestPermissions();
+    if (!hasPermissions) {
+      _showPermissionDialog();
+      return;
+    }
+    
+    _bluetoothService.devicesStream.listen((devices) {
+      if (mounted) {
+        setState(() => _availableDevices = devices);
+      }
+    });
+  }
+  
+  Future<void> _loadPairedDevices() async {
+    final devices = await _storageService.getPairedDevices();
+    setState(() => _pairedDevices = devices);
+  }
+  
+  Future<void> _scanForDevices() async {
+    setState(() => _isScanning = true);
+    await _bluetoothService.startScan();
+    await Future.delayed(const Duration(seconds: 10));
+    await _bluetoothService.stopScan();
+    setState(() => _isScanning = false);
+  }
+  
+  Future<void> _connectDevice(SmartDevice device) async {
+    setState(() {
+      final index = _availableDevices.indexWhere((d) => d.id == device.id);
+      if (index != -1) {
+        _availableDevices[index] = device.copyWith(status: DeviceStatus.connecting);
+      }
+    });
+    
+    final success = await _bluetoothService.connectDevice(device);
+    
+    if (success) {
+      final connectedDevice = device.copyWith(
+        status: DeviceStatus.connected,
+        isPaired: true,
+      );
+      await _storageService.savePairedDevice(connectedDevice);
+      setState(() {
+        _pairedDevices.add(connectedDevice);
+        _availableDevices.removeWhere((d) => d.id == device.id);
+      });
+      _showSnackBar('Connected to ${device.name}', Colors.green);
+    } else {
+      setState(() {
+        final index = _availableDevices.indexWhere((d) => d.id == device.id);
+        if (index != -1) {
+          _availableDevices[index] = device.copyWith(status: DeviceStatus.error);
+        }
+      });
+      _showSnackBar('Failed to connect to ${device.name}', Colors.red);
+    }
+  }
+  
+  Future<void> _disconnectDevice(SmartDevice device) async {
+    await _bluetoothService.disconnectDevice(device);
+    await _storageService.removePairedDevice(device.id);
+    setState(() {
+      _pairedDevices.removeWhere((d) => d.id == device.id);
+    });
+    _showSnackBar('Disconnected from ${device.name}', Colors.orange);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Devices')),
+      appBar: AppBar(
+        title: const Text('Devices'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Paired Devices'),
+            Tab(text: 'Available Devices'),
+          ],
+        ),
+      ),
       drawer: const AppDrawer(),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _isScanning ? null : _scanForDevices,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Scan for Devices'),
-                ),
-                const SizedBox(width: 16),
-                if (_isScanning) const CircularProgressIndicator(),
-              ],
+          _buildPairedDevicesTab(),
+          _buildAvailableDevicesTab(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isScanning ? null : _scanForDevices,
+        icon: _isScanning 
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            )
+          : const Icon(Icons.search),
+        label: Text(_isScanning ? 'Scanning...' : 'Scan for Devices'),
+      ),
+    );
+  }
+  
+  Widget _buildPairedDevicesTab() {
+    if (_pairedDevices.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.devices_other, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No paired devices', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            SizedBox(height: 8),
+            Text('Scan for devices to get started', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      itemCount: _pairedDevices.length,
+      itemBuilder: (context, index) => _buildDeviceCard(_pairedDevices[index], isPaired: true),
+    );
+  }
+  
+  Widget _buildAvailableDevicesTab() {
+    if (_availableDevices.isEmpty && !_isScanning) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.bluetooth_searching, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No devices found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            SizedBox(height: 8),
+            Text('Tap scan button to search', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      itemCount: _availableDevices.length,
+      itemBuilder: (context, index) => _buildDeviceCard(_availableDevices[index]),
+    );
+  }
+  
+  Widget _buildDeviceCard(SmartDevice device, {bool isPaired = false}) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: _getDeviceIcon(device.type),
+        title: Text(device.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_getStatusText(device.status)),
+            if (device.rssi != null) Text('Signal: ${device.rssi} dBm', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        trailing: isPaired
+          ? IconButton(
+              icon: const Icon(Icons.bluetooth_disabled, color: Colors.red),
+              onPressed: () => _disconnectDevice(device),
+            )
+          : ElevatedButton(
+              onPressed: device.status == DeviceStatus.connecting 
+                ? null 
+                : () => _connectDevice(device),
+              child: const Text('Connect'),
             ),
-          ),
-          Expanded(
-            child: _devices.isEmpty
-                ? const Center(child: Text('No devices found'))
-                : ListView.builder(
-                    itemCount: _devices.length,
-                    itemBuilder: (context, index) {
-                      final device = _devices[index];
-                      return ListTile(
-                        leading: const Icon(Icons.devices_other),
-                        title: Text(device['name']),
-                        subtitle: Text(device['status']),
-                        trailing: Switch(
-                          value: device['connected'],
-                          onChanged: (value) => _toggleDevice(index, value),
-                        ),
-                      );
-                    },
-                  ),
+      ),
+    );
+  }
+  
+  Icon _getDeviceIcon(DeviceType type) {
+    switch (type) {
+      case DeviceType.light: return const Icon(Icons.lightbulb);
+      case DeviceType.thermostat: return const Icon(Icons.thermostat);
+      case DeviceType.lock: return const Icon(Icons.lock);
+      case DeviceType.camera: return const Icon(Icons.camera);
+      case DeviceType.sensor: return const Icon(Icons.sensors);
+      case DeviceType.outlet: return const Icon(Icons.power);
+      default: return const Icon(Icons.devices_other);
+    }
+  }
+  
+  String _getStatusText(DeviceStatus status) {
+    switch (status) {
+      case DeviceStatus.available: return 'Available';
+      case DeviceStatus.connecting: return 'Connecting...';
+      case DeviceStatus.connected: return 'Connected';
+      case DeviceStatus.disconnected: return 'Disconnected';
+      case DeviceStatus.error: return 'Connection failed';
+    }
+  }
+  
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
+  
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permissions Required'),
+        content: const Text('Bluetooth and location permissions are required to scan for devices.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
     );
   }
-
-  void _scanForDevices() {
-    setState(() => _isScanning = true);
-    // TODO: Implement actual device scanning
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isScanning = false;
-        // Mock devices for now
-        _devices.add({
-          'name': 'Smart Light 1',
-          'status': 'Available',
-          'connected': false,
-        });
-      });
-    });
-  }
-
-  void _toggleDevice(int index, bool value) {
-    setState(() {
-      _devices[index]['connected'] = value;
-      _devices[index]['status'] = value ? 'Connected' : 'Disconnected';
-    });
+  
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 }

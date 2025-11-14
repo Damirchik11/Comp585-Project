@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
 
 class TutorialPage extends StatelessWidget {
-  const TutorialPage({Key? key}) : super(key: key);
+  const TutorialPage({super.key});
 
   @override
   Widget build(BuildContext context) {
