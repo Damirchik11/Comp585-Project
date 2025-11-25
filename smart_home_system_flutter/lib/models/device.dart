@@ -27,6 +27,7 @@ class SmartDevice {
   final BluetoothDevice? bluetoothDevice;
   final DateTime? lastSeen;
   final bool isPaired;
+  final bool isMockDevice; // Flag to indicate simulated device
   final Map<String, dynamic>? state; // Device-specific state (brightness, temp, etc)
   
   SmartDevice({
@@ -38,6 +39,7 @@ class SmartDevice {
     this.bluetoothDevice,
     this.lastSeen,
     this.isPaired = false,
+    this.isMockDevice = false,
     this.state,
   });
   
@@ -46,6 +48,7 @@ class SmartDevice {
     int? rssi,
     Map<String, dynamic>? state,
     bool? isPaired,
+    bool? isMockDevice,
   }) {
     return SmartDevice(
       id: id,
@@ -56,6 +59,7 @@ class SmartDevice {
       bluetoothDevice: bluetoothDevice,
       lastSeen: DateTime.now(),
       isPaired: isPaired ?? this.isPaired,
+      isMockDevice: isMockDevice ?? this.isMockDevice,
       state: state ?? this.state,
     );
   }

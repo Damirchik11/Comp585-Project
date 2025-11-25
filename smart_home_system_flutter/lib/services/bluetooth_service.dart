@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/device.dart';
-import 'dart:io';
+import 'platform_service.dart';
 
 class BluetoothService {
   static final BluetoothService _instance = BluetoothService._internal();
   factory BluetoothService() => _instance;
   BluetoothService._internal();
   
+  final PlatformService _platformService = PlatformService();
   final StreamController<List<SmartDevice>> _devicesController = 
     StreamController<List<SmartDevice>>.broadcast();
   
@@ -17,7 +20,89 @@ class BluetoothService {
   final List<SmartDevice> _discoveredDevices = [];
   StreamSubscription? _scanSubscription;
   
+  // Mock device data for desktop platforms
+  final List<SmartDevice> _mockDevices = [];
+  Timer? _mockScanTimer;
+  final Random _random = Random();
+  
+  /// Initialize mock devices for desktop platforms
+  void _initMockDevices() {
+    _mockDevices.clear();
+    _mockDevices.addAll([
+      SmartDevice(
+        id: 'mock_light_001',
+        name: 'Living Room Light',
+        type: DeviceType.light,
+        rssi: -45 - _random.nextInt(20),
+        isMockDevice: true,
+        state: {'brightness': 80, 'on': true},
+      ),
+      SmartDevice(
+        id: 'mock_light_002',
+        name: 'Bedroom Light',
+        type: DeviceType.light,
+        rssi: -55 - _random.nextInt(20),
+        isMockDevice: true,
+        state: {'brightness': 60, 'on': false},
+      ),
+      SmartDevice(
+        id: 'mock_thermostat_001',
+        name: 'Smart Thermostat',
+        type: DeviceType.thermostat,
+        rssi: -40 - _random.nextInt(15),
+        isMockDevice: true,
+        state: {'temperature': 72, 'mode': 'heat'},
+      ),
+      SmartDevice(
+        id: 'mock_lock_001',
+        name: 'Front Door Lock',
+        type: DeviceType.lock,
+        rssi: -50 - _random.nextInt(20),
+        isMockDevice: true,
+        state: {'locked': true},
+      ),
+      SmartDevice(
+        id: 'mock_camera_001',
+        name: 'Security Camera',
+        type: DeviceType.camera,
+        rssi: -60 - _random.nextInt(25),
+        isMockDevice: true,
+        state: {'recording': true, 'motion_detected': false},
+      ),
+      SmartDevice(
+        id: 'mock_sensor_001',
+        name: 'Motion Sensor',
+        type: DeviceType.sensor,
+        rssi: -65 - _random.nextInt(20),
+        isMockDevice: true,
+        state: {'motion': false, 'battery': 85},
+      ),
+      SmartDevice(
+        id: 'mock_outlet_001',
+        name: 'Smart Outlet',
+        type: DeviceType.outlet,
+        rssi: -48 - _random.nextInt(15),
+        isMockDevice: true,
+        state: {'on': true, 'power': 120},
+      ),
+      SmartDevice(
+        id: 'mock_sensor_002',
+        name: 'Kitchen Temp Sensor',
+        type: DeviceType.sensor,
+        rssi: -70 - _random.nextInt(20),
+        isMockDevice: true,
+        state: {'temperature': 68, 'humidity': 45},
+      ),
+    ]);
+  }
+  
   Future<bool> requestPermissions() async {
+    // On desktop platforms, no permissions needed for mock devices
+    if (_platformService.isDesktopPlatform) {
+      return true;
+    }
+    
+    // Mobile platforms: request Bluetooth permissions
     if (Platform.isAndroid) {
       Map<Permission, PermissionStatus> statuses = await [
         Permission.bluetooth,
@@ -33,6 +118,13 @@ class BluetoothService {
   Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
     _discoveredDevices.clear();
     
+    // Desktop platforms: use mock device scanning
+    if (_platformService.isDesktopPlatform) {
+      _startMockScan(timeout);
+      return;
+    }
+    
+    // Mobile platforms: use real Bluetooth scanning
     await FlutterBluePlus.startScan(timeout: timeout);
     
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
@@ -48,6 +140,7 @@ class BluetoothService {
           rssi: result.rssi,
           bluetoothDevice: result.device,
           lastSeen: DateTime.now(),
+          isMockDevice: false,
         );
         
         if (existingIndex != -1) {
@@ -60,14 +153,51 @@ class BluetoothService {
     });
   }
   
+  /// Simulate device scanning on desktop platforms
+  void _startMockScan(Duration timeout) {
+    _initMockDevices();
+    
+    // Simulate gradual device discovery
+    int devicesFound = 0;
+    _mockScanTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      if (devicesFound < _mockDevices.length) {
+        _discoveredDevices.add(_mockDevices[devicesFound]);
+        devicesFound++;
+        _devicesController.add(List.from(_discoveredDevices));
+      } else {
+        timer.cancel();
+      }
+    });
+    
+    // Stop scan after timeout
+    Future.delayed(timeout, () {
+      _mockScanTimer?.cancel();
+    });
+  }
+  
   Future<void> stopScan() async {
+    if (_platformService.isDesktopPlatform) {
+      _mockScanTimer?.cancel();
+      return;
+    }
+    
     await FlutterBluePlus.stopScan();
     _scanSubscription?.cancel();
   }
   
   Future<bool> connectDevice(SmartDevice device) async {
+    // Mock device connection on desktop
+    if (_platformService.isDesktopPlatform || device.isMockDevice) {
+      // Simulate connection delay
+      await Future.delayed(Duration(milliseconds: 500 + _random.nextInt(1500)));
+      
+      // 95% success rate for mock connections
+      return _random.nextDouble() > 0.05;
+    }
+    
+    // Real Bluetooth connection on mobile
     try {
-      await device.bluetoothDevice?.connect(timeout: Duration(seconds: 15));
+      await device.bluetoothDevice?.connect(timeout: const Duration(seconds: 15));
       await device.bluetoothDevice?.discoverServices();
       return true;
     } catch (e) {
@@ -77,6 +207,13 @@ class BluetoothService {
   }
   
   Future<void> disconnectDevice(SmartDevice device) async {
+    // Mock device disconnection on desktop
+    if (_platformService.isDesktopPlatform || device.isMockDevice) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      return;
+    }
+    
+    // Real Bluetooth disconnection on mobile
     await device.bluetoothDevice?.disconnect();
   }
   
@@ -93,6 +230,7 @@ class BluetoothService {
   
   void dispose() {
     _scanSubscription?.cancel();
+    _mockScanTimer?.cancel();
     _devicesController.close();
   }
 }

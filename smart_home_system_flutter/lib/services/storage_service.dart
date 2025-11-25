@@ -16,6 +16,7 @@ class StorageService {
       'id': d.id,
       'name': d.name,
       'type': d.type.toString(),
+      'isMockDevice': d.isMockDevice,
     }).toList();
     
     await prefs.setString(_pairedDevicesKey, jsonEncode(jsonList));
@@ -36,6 +37,7 @@ class StorageService {
         orElse: () => DeviceType.unknown,
       ),
       isPaired: true,
+      isMockDevice: json['isMockDevice'] ?? false,
     )).toList();
   }
   
@@ -48,6 +50,7 @@ class StorageService {
       'id': d.id,
       'name': d.name,
       'type': d.type.toString(),
+      'isMockDevice': d.isMockDevice,
     }).toList();
     
     await prefs.setString(_pairedDevicesKey, jsonEncode(jsonList));

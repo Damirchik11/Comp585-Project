@@ -3,6 +3,7 @@ import '../widgets/app_drawer.dart';
 import '../models/device.dart';
 import '../services/bluetooth_service.dart';
 import '../services/storage_service.dart';
+import '../services/platform_service.dart';
 
 class DevicesPage extends StatefulWidget {
   const DevicesPage({super.key});
@@ -14,11 +15,11 @@ class DevicesPage extends StatefulWidget {
 class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin {
   final BluetoothService _bluetoothService = BluetoothService();
   final StorageService _storageService = StorageService();
+  final PlatformService _platformService = PlatformService();
   
   List<SmartDevice> _availableDevices = [];
   List<SmartDevice> _pairedDevices = [];
   bool _isScanning = false;
-  final bool _bluetoothEnabled = false;
   late TabController _tabController;
   
   @override
@@ -31,7 +32,7 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
   
   Future<void> _initBluetooth() async {
     final hasPermissions = await _bluetoothService.requestPermissions();
-    if (!hasPermissions) {
+    if (!hasPermissions && _platformService.isMobilePlatform) {
       _showPermissionDialog();
       return;
     }
@@ -101,7 +102,25 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Devices'),
+        title: Row(
+          children: [
+            const Text('Devices'),
+            if (_platformService.isDesktopPlatform) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_platformService.platformName} - Mock Mode',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ],
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -156,15 +175,18 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
   
   Widget _buildAvailableDevicesTab() {
     if (_availableDevices.isEmpty && !_isScanning) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bluetooth_searching, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No devices found', style: TextStyle(fontSize: 18, color: Colors.grey)),
-            SizedBox(height: 8),
-            Text('Tap scan button to search', style: TextStyle(color: Colors.grey)),
+            const Icon(Icons.bluetooth_searching, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('No devices found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 8),
+            if (_platformService.isDesktopPlatform)
+              const Text('Tap scan to discover simulated devices', style: TextStyle(color: Colors.grey))
+            else
+              const Text('Tap scan button to search', style: TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -181,12 +203,33 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: _getDeviceIcon(device.type),
-        title: Text(device.name),
+        title: Row(
+          children: [
+            Flexible(child: Text(device.name)),
+            if (device.isMockDevice) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.orange.shade300),
+                ),
+                child: const Text(
+                  'SIM',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange),
+                ),
+              ),
+            ],
+          ],
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_getStatusText(device.status)),
-            if (device.rssi != null) Text('Signal: ${device.rssi} dBm', style: TextStyle(fontSize: 12)),
+            if (device.rssi != null) Text('Signal: ${device.rssi} dBm', style: const TextStyle(fontSize: 12)),
+            if (device.isMockDevice && _platformService.isDebugMode)
+              Text('Platform: ${_platformService.platformName}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
         trailing: isPaired
