@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:298500679782:android:88cb4055833f41f8a065a7",
+        "mobilesdk_app_id": "1:298500679782:android:5c8fc87b392df752a065a7",
         "android_client_info": {
-          "package_name": "com.example.smart_home_system"
+          "package_name": "com.example.smart_home_system_flutter"
         }
       },
       "oauth_client": [],

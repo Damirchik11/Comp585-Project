@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'pages/home_layout_page.dart';
 import 'pages/devices_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/tutorial_page.dart';
 import 'pages/auth_page.dart';
 
-void main() => runApp(const SmartHomeApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const SmartHomeApp());
+}
 
 class SmartHomeApp extends StatelessWidget {
   const SmartHomeApp({super.key});
