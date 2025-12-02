@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'utils/auth_guard.dart';
 import 'pages/home_layout_page.dart';
 import 'pages/devices_page.dart';
 import 'pages/settings_page.dart';
@@ -22,10 +23,10 @@ class SmartHomeApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomeLayoutPage(),
-        '/devices': (context) => const DevicesPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/tutorial': (context) => const TutorialPage(),
+        '/': (context) => const AuthGuard(child: HomeLayoutPage()),
+        '/devices': (context) => const AuthGuard(child: DevicesPage()),
+        '/settings': (context) => const AuthGuard(child: SettingsPage()),
+        '/tutorial': (context) => const AuthGuard(child: TutorialPage()),
         '/auth': (context) => const AuthPage(),
       },
     );
