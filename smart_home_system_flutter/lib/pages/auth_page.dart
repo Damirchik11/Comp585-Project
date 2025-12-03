@@ -182,7 +182,7 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       setState(() {

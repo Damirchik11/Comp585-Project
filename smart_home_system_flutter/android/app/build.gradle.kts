@@ -3,7 +3,10 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Add the Google services Gradle plugin
+    id("com.google.gms.google-services")
 }
 
 val localProperties = Properties()
@@ -16,7 +19,7 @@ val flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "
 val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
 android {
-    namespace = "com.example.smart_home_system_flutter"
+    namespace = "com.example.smart_home_system"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -34,7 +37,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.smart_home_system_flutter"
+        applicationId = "com.example.smart_home_system"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInt()
@@ -47,6 +50,8 @@ android {
 
     buildTypes {
         release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -57,13 +62,18 @@ flutter {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
-    // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    // Import the Firebase BoM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
 
-    // Add the dependency for the Firebase SDK for Google Analytics
-    implementation("com.google.firebase:firebase-analytics-ktx")
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+
+    // Cloud Firestore
+    implementation("com.google.firebase:firebase-firestore")
+
+    // Firebase Analytics (optional but recommended)
+    implementation("com.google.firebase:firebase-analytics")
+    
+    // MultiDex support
     implementation("androidx.multidex:multidex:2.0.1")
 }
-
-apply(plugin = "com.google.gms.google-services")
