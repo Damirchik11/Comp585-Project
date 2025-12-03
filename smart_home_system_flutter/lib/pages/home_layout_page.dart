@@ -22,6 +22,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
   final int cellSize = 40; // pixels per grid cell
   final List<Room> _placedRooms = [];
   final GlobalKey _canvasKey = GlobalKey(); // used to convert global->local coordinates
+  final GlobalKey _deleteKey = GlobalKey(); // key for the delete area
   int _nextRoomId = 1;
 
   // track moving / selected room id while the user interacts
@@ -29,6 +30,12 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
   int? _selectedRoomId;
   int? _resizingRoomId;
   String? _activeResizeCorner; // 'tl','tr','bl','br'
+
+  // tracking drag pointer for move-delete checks
+  Offset? _lastPanGlobal;
+
+  // whether the delete area is currently hovered (used for UI highlight)
+  bool _deleteHover = false;
 
   @override
   Widget build(BuildContext context) {
@@ -116,11 +123,26 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                   }
                                 }
                               },
+                              onLongPress: () async {
+                                // long-press to delete
+                                final confirm = await _showConfirmDeleteDialog(context, r.label);
+                                if (confirm == true) {
+                                  setState(() {
+                                    _placedRooms.removeWhere((p) => p.id == r.id);
+                                    if (_selectedRoomId == r.id) _selectedRoomId = null;
+                                  });
+                                }
+                              },
                               onPanStart: (details) {
                                 _movingRoomId = r.id;
-                                setState(() { _selectedRoomId = r.id; });
+                                setState(() {
+                                  _selectedRoomId = r.id;
+                                });
                               },
                               onPanUpdate: (details) {
+                                // update last global pointer for deletion checks
+                                _lastPanGlobal = details.globalPosition;
+
                                 final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                                 if (canvasBox == null) return;
                                 final local = canvasBox.globalToLocal(details.globalPosition);
@@ -138,6 +160,12 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                 if (gridX > maxStartX) gridX = maxStartX;
                                 if (gridY > maxStartY) gridY = maxStartY;
 
+                                // update hover state for delete area (visual feedback)
+                                final overDelete = _isGlobalPointInDeleteArea(details.globalPosition);
+                                if (overDelete != _deleteHover) {
+                                  setState(() => _deleteHover = overDelete);
+                                }
+
                                 setState(() {
                                   final idx = _placedRooms.indexWhere((p) => p.id == r.id);
                                   if (idx != -1) {
@@ -146,9 +174,23 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                 });
                               },
                               onPanEnd: (details) {
+                                // if last pointer is in delete area -> remove
+                                if (_lastPanGlobal != null && _isGlobalPointInDeleteArea(_lastPanGlobal!)) {
+                                  setState(() {
+                                    _placedRooms.removeWhere((p) => p.id == r.id);
+                                    _deleteHover = false;
+                                    if (_selectedRoomId == r.id) _selectedRoomId = null;
+                                  });
+                                  _movingRoomId = null;
+                                  _lastPanGlobal = null;
+                                  return;
+                                }
+
                                 final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
                                 if (canvasBox == null) {
                                   _movingRoomId = null;
+                                  _lastPanGlobal = null;
+                                  _deleteHover = false;
                                   return;
                                 }
 
@@ -165,6 +207,8 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                 }
 
                                 _movingRoomId = null;
+                                _lastPanGlobal = null;
+                                if (_deleteHover) setState(() => _deleteHover = false);
                               },
                               child: Stack(
                                 children: [
@@ -193,7 +237,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                         ),
 
                                   // selection outline
-                                  if (isSelected)
+                                  if (_selectedRoomId == r.id)
                                     Positioned.fill(
                                       child: IgnorePointer(
                                         child: Container(
@@ -203,12 +247,58 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                     ),
 
                                   // resize handles (only when selected)
-                                  if (isSelected) ..._buildResizeHandles(r, width, height),
+                                  if (_selectedRoomId == r.id) ..._buildResizeHandles(r, width, height),
                                 ],
                               ),
                             ),
                           );
                         }).toList(),
+
+                        // delete area (DragTarget for toolbox drags + visual target for moves)
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: DragTarget<Room>(
+                            key: _deleteKey,
+                            onWillAccept: (data) {
+                              setState(() => _deleteHover = true);
+                              return true;
+                            },
+                            onLeave: (data) {
+                              setState(() => _deleteHover = false);
+                            },
+                            onAccept: (data) {
+                              // If a toolbox draggable (id == -1) drops here, do nothing (we skip adding).
+                              // If in future placed rooms are Draggable with data containing id, we could remove by id.
+                              // To be safe, if data.id > 0, remove matching placed room.
+                              if (data.id > 0) {
+                                setState(() {
+                                  _placedRooms.removeWhere((p) => p.id == data.id);
+                                  if (_selectedRoomId == data.id) _selectedRoomId = null;
+                                });
+                              }
+                              setState(() => _deleteHover = false);
+                            },
+                            builder: (context, candidateData, rejectedData) {
+                              return Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _deleteHover ? Colors.redAccent : Colors.red,
+                                  boxShadow: [
+                                    if (_deleteHover)
+                                      BoxShadow(
+                                        color: Colors.redAccent.withOpacity(0.4),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.delete, color: Colors.white, size: 28),
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -256,17 +346,26 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
         ],
       ),
       onDragEnd: (details) {
+        // If dropped over delete area, don't create the room
+        if (_isGlobalPointInDeleteArea(details.offset)) {
+          setState(() => _deleteHover = false);
+          return;
+        }
+
+        // Convert global drop point to local coordinates within the canvas
         final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-        if (canvasBox == null) return;
+        if (canvasBox == null) return; // safety
 
         final local = canvasBox.globalToLocal(details.offset);
 
         final int maxCols = (canvasBox.size.width / cellSize).floor();
         final int maxRows = (canvasBox.size.height / cellSize).floor();
 
+        // initial snapped grid coords
         int gridX = (local.dx / cellSize).floor();
         int gridY = (local.dy / cellSize).floor();
 
+        // clamp to valid start area (so width/height fits)
         final int maxStartX = (maxCols - gridW) >= 0 ? (maxCols - gridW) : 0;
         final int maxStartY = (maxRows - gridH) >= 0 ? (maxRows - gridH) : 0;
         if (gridX < 0) gridX = 0;
@@ -274,6 +373,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
         if (gridX > maxStartX) gridX = maxStartX;
         if (gridY > maxStartY) gridY = maxStartY;
 
+        // create new room with unique id
         final newRoom = Room(
           id: _nextRoomId++,
           gridX: gridX,
@@ -285,6 +385,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           label: '',
         );
 
+        // find nearest available position using a grid-aware search
         final fitted = _fitRoom(newRoom, maxCols, maxRows);
 
         setState(() {
@@ -308,9 +409,23 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           },
           onPanUpdate: (details) {
             _onResizeDrag(r, corner, details);
+            // also update delete hover if resizing near trash
+            _lastPanGlobal = details.globalPosition;
+            final overDelete = _isGlobalPointInDeleteArea(details.globalPosition);
+            if (overDelete != _deleteHover) setState(() => _deleteHover = overDelete);
           },
           onPanEnd: (details) {
-            _onResizeEnd(r);
+            // if released over delete area -> delete
+            if (_lastPanGlobal != null && _isGlobalPointInDeleteArea(_lastPanGlobal!)) {
+              setState(() {
+                _placedRooms.removeWhere((p) => p.id == r.id);
+                if (_selectedRoomId == r.id) _selectedRoomId = null;
+                _deleteHover = false;
+              });
+            } else {
+              _onResizeEnd(r);
+            }
+            _lastPanGlobal = null;
           },
           child: Container(
             width: handleSize,
@@ -518,5 +633,30 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
         );
       },
     );
+  }
+
+  Future<bool?> _showConfirmDeleteDialog(BuildContext context, String label) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete room?'),
+          content: Text(label.isEmpty ? 'Delete this room?' : 'Delete "$label"?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          ],
+        );
+      },
+    );
+  }
+
+  // Checks whether a global coordinate (screen space) is inside the delete area widget
+  bool _isGlobalPointInDeleteArea(Offset globalPoint) {
+    final deleteBox = _deleteKey.currentContext?.findRenderObject() as RenderBox?;
+    if (deleteBox == null) return false;
+    final topLeft = deleteBox.localToGlobal(Offset.zero);
+    final rect = topLeft & deleteBox.size;
+    return rect.contains(globalPoint);
   }
 }
