@@ -64,7 +64,6 @@ class FirebaseStorageService {
     });
   }
 
-
   /// Remove a paired device from Firestore
   Future<void> removePairedDevice(String deviceId) async {
     if (_userDoc == null) throw 'User not authenticated';
@@ -79,11 +78,13 @@ class FirebaseStorageService {
     if (_userDoc == null) throw 'User not authenticated';
 
     final roomsData = rooms.map((room) => {
-      'name': room.name,
-      'x': room.position.dx,
-      'y': room.position.dy,
-      'width': room.size.width,
-      'height': room.size.height,
+      'id': room.id,
+      'gridX': room.gridX,
+      'gridY': room.gridY,
+      'gridW': room.gridW,
+      'gridH': room.gridH,
+      'color': room.color.value,
+      'isCircle': room.isCircle,
     }).toList();
 
     await _userDoc!.set({
@@ -105,15 +106,13 @@ class FirebaseStorageService {
       final roomsData = data['roomLayout'] as List<dynamic>;
       return roomsData.map((roomData) {
         return Room(
-          name: roomData['name'] as String,
-          position: Offset(
-            (roomData['x'] as num).toDouble(),
-            (roomData['y'] as num).toDouble(),
-          ),
-          size: Size(
-            (roomData['width'] as num).toDouble(),
-            (roomData['height'] as num).toDouble(),
-          ),
+          id: roomData['id'] as int,
+          gridX: roomData['gridX'] as int,
+          gridY: roomData['gridY'] as int,
+          gridW: roomData['gridW'] as int,
+          gridH: roomData['gridH'] as int,
+          color: Color(roomData['color'] as int),
+          isCircle: roomData['isCircle'] as bool? ?? false,
         );
       }).toList();
     });
@@ -132,15 +131,13 @@ class FirebaseStorageService {
     final roomsData = data['roomLayout'] as List<dynamic>;
     return roomsData.map((roomData) {
       return Room(
-        name: roomData['name'] as String,
-        position: Offset(
-          (roomData['x'] as num).toDouble(),
-          (roomData['y'] as num).toDouble(),
-        ),
-        size: Size(
-          (roomData['width'] as num).toDouble(),
-          (roomData['height'] as num).toDouble(),
-        ),
+        id: roomData['id'] as int,
+        gridX: roomData['gridX'] as int,
+        gridY: roomData['gridY'] as int,
+        gridW: roomData['gridW'] as int,
+        gridH: roomData['gridH'] as int,
+        color: Color(roomData['color'] as int),
+        isCircle: roomData['isCircle'] as bool? ?? false,
       );
     }).toList();
   }
@@ -192,23 +189,29 @@ class FirebaseStorageService {
         return DeviceType.lock;
       case 'camera':
         return DeviceType.camera;
-      case 'speaker':
-        return DeviceType.speaker;
+      case 'sensor':
+        return DeviceType.sensor;
+      case 'outlet':
+        return DeviceType.outlet;
       default:
-        return DeviceType.light;
+        return DeviceType.unknown;
     }
   }
 
   DeviceStatus _parseDeviceStatus(String statusString) {
     switch (statusString) {
-      case 'on':
-        return DeviceStatus.on;
-      case 'off':
-        return DeviceStatus.off;
-      case 'offline':
-        return DeviceStatus.offline;
+      case 'available':
+        return DeviceStatus.available;
+      case 'connecting':
+        return DeviceStatus.connecting;
+      case 'connected':
+        return DeviceStatus.connected;
+      case 'disconnected':
+        return DeviceStatus.disconnected;
+      case 'error':
+        return DeviceStatus.error;
       default:
-        return DeviceStatus.offline;
+        return DeviceStatus.disconnected;
     }
   }
 

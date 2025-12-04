@@ -11,6 +11,9 @@ class BluetoothService {
   factory BluetoothService() => _instance;
   BluetoothService._internal();
   
+  // Enable mock devices for testing on ANY platform (including Android emulator)
+  static const bool enableMockDevicesForTesting = true;
+  
   final PlatformService _platformService = PlatformService();
   final StreamController<List<SmartDevice>> _devicesController = 
     StreamController<List<SmartDevice>>.broadcast();
@@ -20,12 +23,15 @@ class BluetoothService {
   final List<SmartDevice> _discoveredDevices = [];
   StreamSubscription? _scanSubscription;
   
-  // Mock device data for desktop platforms
+  // Mock device data for testing
   final List<SmartDevice> _mockDevices = [];
   Timer? _mockScanTimer;
   final Random _random = Random();
   
-  /// Initialize mock devices for desktop platforms
+  // Check if we should use mock devices (desktop OR testing enabled)
+  bool get _useMockDevices => _platformService.isDesktopPlatform || enableMockDevicesForTesting;
+  
+  /// Initialize mock devices
   void _initMockDevices() {
     _mockDevices.clear();
     _mockDevices.addAll([
@@ -97,8 +103,8 @@ class BluetoothService {
   }
   
   Future<bool> requestPermissions() async {
-    // On desktop platforms, no permissions needed for mock devices
-    if (_platformService.isDesktopPlatform) {
+    // Skip permissions if using mock devices
+    if (_useMockDevices) {
       return true;
     }
     
@@ -118,13 +124,13 @@ class BluetoothService {
   Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
     _discoveredDevices.clear();
     
-    // Desktop platforms: use mock device scanning
-    if (_platformService.isDesktopPlatform) {
+    // Use mock device scanning if enabled
+    if (_useMockDevices) {
       _startMockScan(timeout);
       return;
     }
     
-    // Mobile platforms: use real Bluetooth scanning
+    // Real Bluetooth scanning on mobile
     await FlutterBluePlus.startScan(timeout: timeout);
     
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
@@ -153,7 +159,7 @@ class BluetoothService {
     });
   }
   
-  /// Simulate device scanning on desktop platforms
+  /// Simulate device scanning
   void _startMockScan(Duration timeout) {
     _initMockDevices();
     
@@ -176,7 +182,7 @@ class BluetoothService {
   }
   
   Future<void> stopScan() async {
-    if (_platformService.isDesktopPlatform) {
+    if (_useMockDevices) {
       _mockScanTimer?.cancel();
       return;
     }
@@ -186,8 +192,8 @@ class BluetoothService {
   }
   
   Future<bool> connectDevice(SmartDevice device) async {
-    // Mock device connection on desktop
-    if (_platformService.isDesktopPlatform || device.isMockDevice) {
+    // Mock device connection
+    if (_useMockDevices || device.isMockDevice) {
       // Simulate connection delay
       await Future.delayed(Duration(milliseconds: 500 + _random.nextInt(1500)));
       
@@ -207,8 +213,8 @@ class BluetoothService {
   }
   
   Future<void> disconnectDevice(SmartDevice device) async {
-    // Mock device disconnection on desktop
-    if (_platformService.isDesktopPlatform || device.isMockDevice) {
+    // Mock device disconnection
+    if (_useMockDevices || device.isMockDevice) {
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }

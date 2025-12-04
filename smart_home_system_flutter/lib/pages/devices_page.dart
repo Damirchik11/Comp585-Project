@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
 import '../models/device.dart';
 import '../services/bluetooth_service.dart';
-import '../services/storage_service.dart';
+import '../services/firebase_storage_service.dart';
 import '../services/platform_service.dart';
 
 class DevicesPage extends StatefulWidget {
@@ -14,11 +14,10 @@ class DevicesPage extends StatefulWidget {
 
 class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin {
   final BluetoothService _bluetoothService = BluetoothService();
-  final StorageService _storageService = StorageService();
+  final FirebaseStorageService _storageService = FirebaseStorageService();
   final PlatformService _platformService = PlatformService();
   
   List<SmartDevice> _availableDevices = [];
-  List<SmartDevice> _pairedDevices = [];
   bool _isScanning = false;
   late TabController _tabController;
   
@@ -27,7 +26,6 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _initBluetooth();
-    _loadPairedDevices();
   }
   
   Future<void> _initBluetooth() async {
@@ -42,11 +40,6 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
         setState(() => _availableDevices = devices);
       }
     });
-  }
-  
-  Future<void> _loadPairedDevices() async {
-    final devices = await _storageService.getPairedDevices();
-    setState(() => _pairedDevices = devices);
   }
   
   Future<void> _scanForDevices() async {
@@ -72,9 +65,9 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
         status: DeviceStatus.connected,
         isPaired: true,
       );
+      // Save to Firestore - will update UI via StreamBuilder
       await _storageService.savePairedDevice(connectedDevice);
       setState(() {
-        _pairedDevices.add(connectedDevice);
         _availableDevices.removeWhere((d) => d.id == device.id);
       });
       _showSnackBar('Connected to ${device.name}', Colors.green);
@@ -91,10 +84,8 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
   
   Future<void> _disconnectDevice(SmartDevice device) async {
     await _bluetoothService.disconnectDevice(device);
+    // Remove from Firestore - will update UI via StreamBuilder
     await _storageService.removePairedDevice(device.id);
-    setState(() {
-      _pairedDevices.removeWhere((d) => d.id == device.id);
-    });
     _showSnackBar('Disconnected from ${device.name}', Colors.orange);
   }
 
@@ -151,25 +142,50 @@ class _DevicesPageState extends State<DevicesPage> with TickerProviderStateMixin
     );
   }
   
+  // Real-time Firestore stream for paired devices
   Widget _buildPairedDevicesTab() {
-    if (_pairedDevices.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.devices_other, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No paired devices', style: TextStyle(fontSize: 18, color: Colors.grey)),
-            SizedBox(height: 8),
-            Text('Scan for devices to get started', style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      itemCount: _pairedDevices.length,
-      itemBuilder: (context, index) => _buildDeviceCard(_pairedDevices[index], isPaired: true),
+    return StreamBuilder<List<SmartDevice>>(
+      stream: _storageService.getPairedDevicesStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text('Error: ${snapshot.error}'),
+              ],
+            ),
+          );
+        }
+        
+        final pairedDevices = snapshot.data ?? [];
+        
+        if (pairedDevices.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.devices_other, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text('No paired devices', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                SizedBox(height: 8),
+                Text('Scan for devices to get started', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          );
+        }
+        
+        return ListView.builder(
+          itemCount: pairedDevices.length,
+          itemBuilder: (context, index) => _buildDeviceCard(pairedDevices[index], isPaired: true),
+        );
+      },
     );
   }
   
