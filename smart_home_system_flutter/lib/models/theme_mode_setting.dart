@@ -1,0 +1,1 @@
+enum ThemeModeSetting { light, dark }

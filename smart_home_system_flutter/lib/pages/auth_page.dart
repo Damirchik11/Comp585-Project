@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'create_account.dart';
+
 
 
 class AuthPage extends StatefulWidget {
@@ -81,8 +83,9 @@ class _AuthPageState extends State<AuthPage> {
 
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Implement actual authentication
+      if (CreateAccountPage().getEmail() == _emailController.text && CreateAccountPage().getPass() == _passwordController.text) {
       Navigator.pushReplacementNamed(context, '/layout');
+      }
     }
   }
 

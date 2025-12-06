@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
 
+List<Map<String, dynamic>> entries =[];
+
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
 
   @override
   State<CreateAccountPage> createState() => _CreateAcctState();
+
+  String getName() {
+    return entries[0]["name"];
+  }
+
+  String getEmail(){
+    return entries[0]["email"];
+  }
+
+  String getPass() {
+    return entries[0]["password"];
+  }
+
 }
 
 
 class _CreateAcctState extends State<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordCheckController = TextEditingController();
+  
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +52,11 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   const Icon(Icons.home_outlined, size: 80),
                   const SizedBox(height: 24),
                   TextFormField(
-                    controller: _passwordController,
+                    controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: 'Profile Name',
                       border: OutlineInputBorder(),
                     ),
-                    obscureText: true,
                     validator: (value) {
                       if (value?.isEmpty ?? true) return 'Required';
                       return null;
@@ -72,7 +89,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
-                    controller: _passwordController,
+                    controller: _passwordCheckController,
                     decoration: const InputDecoration(
                       labelText: 'Reenter Password',
                       border: OutlineInputBorder(),
@@ -80,6 +97,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                     obscureText: true,
                     validator: (value) {
                       if (value?.isEmpty ?? true) return 'Required';
+                      if (value != _passwordController.text) return 'Passwords do not match';
                       return null;
                     },
                   ),
@@ -106,9 +124,17 @@ class _CreateAcctState extends State<CreateAccountPage> {
     );
   }
 
+  void saveProfile() {
+    entries.add({
+      "name": _nameController.text,
+      "email": _emailController.text,
+      "password": _passwordController.text,
+    });
+  }
+
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Implement actual authentication
+      saveProfile();
       Navigator.pushReplacementNamed(context, '/layout');
     }
   }

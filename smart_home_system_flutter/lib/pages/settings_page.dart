@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_home_system/models/font_size_setting.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
+import '../models/theme_mode_setting.dart';
 import '../widgets/app_drawer.dart';
-
-enum ThemeModeSetting { light, dark }
-enum ThemeFontSetting { normal, large }
+import 'create_account.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // bool _darkMode = false;
-  ThemeModeSetting _mode = ThemeModeSetting.light;
-  ThemeFontSetting _fontSize = ThemeFontSetting.normal;
+  // ThemeModeSetting _mode = ThemeModeSetting.light;
+  // ThemeFontSetting _fontSize = ThemeFontSetting.normal;
   final List<String> _profile = ['Profile Name', 'Email'];
-  final List<String> _profileEdit = ['Bobby B', 'me@email.com'];
+  final List<String> _profileEdit = [CreateAccountPage().getName(), CreateAccountPage().getEmail()];
 
   @override
   Widget build(BuildContext context) {
+    final themeController = Provider.of<ThemeModeController>(context);
+    final settings = Provider.of<ThemeModeController>(context);
+    final size = settings.resolvedFontSize;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       drawer: const AppDrawer(),
@@ -28,7 +33,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSection('Profile', [
             ExpansionTile(
               title: Text('Profile Settings'),
-              childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              childrenPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 12),
               children: List.generate(_profile.length, (index){
                 return ListTile(
                   leading: Text(_profile[index]),
@@ -53,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const Divider(),
           ListTile(
             title: Text("Theme Mode"),
-            subtitle: Text(_mode == ThemeModeSetting.light ? "Light" : "Dark"),
+            subtitle: Text(themeController.mode == ThemeModeSetting.light ? "Light" : "Dark"),
             trailing: SegmentedButton<ThemeModeSetting>(
               showSelectedIcon: false,
               segments: const [
@@ -68,17 +73,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   icon: Icon(Icons.dark_mode),
                 ),
               ],
-              selected: {_mode},
+              selected: {themeController.mode},
               onSelectionChanged: (value) {
-                setState(() => _mode = value.first);
-                // TODO: Implement theme switching
+                themeController.setMode(value.first);
               },
             ),
           ),
           const Divider(),
           ListTile(
             title: Text("Font Size"),
-            subtitle: Text(_fontSize == ThemeFontSetting.normal ? "Normal" : "Large"),
+            subtitle: Text(size == ThemeFontSetting.normal ? "Normal" : "Large"),
             trailing: SegmentedButton<ThemeFontSetting>(
               showSelectedIcon: false,
               segments: const [
@@ -91,10 +95,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: Text('Large'),
                 ),
               ],
-              selected: {_fontSize},
+              selected: { settings.fontSize },
               onSelectionChanged: (value) {
-                setState(() => _fontSize = value.first);
-                // TODO: Implement theme switching
+                settings.setFontSize(value.first);
               },
             ),
           ),
