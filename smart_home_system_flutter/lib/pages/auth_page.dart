@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 import 'create_account.dart';
 
 
@@ -17,9 +19,13 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<ThemeModeController>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Login'),
+        titleTextStyle: TextStyle(color: controller.hightlightColor, fontSize: controller.resolvedFontSize),
+        backgroundColor: controller.accentColor,
         automaticallyImplyLeading: false,
       ),
       body: Center(
@@ -36,7 +42,8 @@ class _AuthPageState extends State<AuthPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
+                    decoration: InputDecoration(
                       labelText: 'Email',
                       border: OutlineInputBorder(),
                     ),
@@ -48,7 +55,8 @@ class _AuthPageState extends State<AuthPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
+                    decoration: InputDecoration(
                       labelText: 'Password',
                       border: OutlineInputBorder(),
                     ),
@@ -62,12 +70,13 @@ class _AuthPageState extends State<AuthPage> {
                   ElevatedButton(
                     onPressed: _handleSubmit,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(60),
+                      backgroundColor: controller.accentColor,
                     ),
-                    child: Text('Login')
+                    child: Text('Login', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize))
                   ),
                   TextButton(
-                    child: Text('Need an account? Sign up'),
+                    child: Text('Need an account? Sign up', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize*0.75),),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/createAcct');
                     },

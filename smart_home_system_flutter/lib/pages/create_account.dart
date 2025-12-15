@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 
 List<Map<String, dynamic>> entries =[];
 
@@ -33,10 +35,13 @@ class _CreateAcctState extends State<CreateAccountPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<ThemeModeController>(context);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
+        titleTextStyle: TextStyle(color: controller.hightlightColor, fontSize: controller.resolvedFontSize),
+        backgroundColor: controller.accentColor,
         automaticallyImplyLeading: false,
         ),
       body: Center(
@@ -53,6 +58,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _nameController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
                     decoration: const InputDecoration(
                       labelText: 'Profile Name',
                       border: OutlineInputBorder(),
@@ -65,6 +71,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _emailController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       border: OutlineInputBorder(),
@@ -77,6 +84,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _passwordController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
                     decoration: const InputDecoration(
                       labelText: 'Password',
                       border: OutlineInputBorder(),
@@ -90,6 +98,7 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _passwordCheckController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
                     decoration: const InputDecoration(
                       labelText: 'Reenter Password',
                       border: OutlineInputBorder(),
@@ -105,12 +114,13 @@ class _CreateAcctState extends State<CreateAccountPage> {
                   ElevatedButton(
                     onPressed: _handleSubmit,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(60),
+                      backgroundColor: controller.accentColor,
                     ),
-                    child: Text('Create Account')
+                    child: Text('Create Account', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),)
                   ),
                   TextButton(
-                    child: Text('Already have an account? Login'),
+                    child: Text('Already have an account? Login', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize*0.75),),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/auth');
                     },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/theme_mode_setting.dart';
-import '../models/font_size_setting.dart';
 
 
 class ThemeModeController extends ChangeNotifier {
@@ -12,6 +11,52 @@ class ThemeModeController extends ChangeNotifier {
     _mode = newMode;
     notifyListeners();
   }
+
+  //Colors
+  ThemeColorSetting _colorSetting = ThemeColorSetting.blues;
+  ThemeColorSetting get colorSetting => _colorSetting;
+
+  void setColor(ThemeColorSetting newColor) {
+    _colorSetting = newColor;
+    notifyListeners();
+  }
+
+  Color get backgroundColor {
+    switch (_colorSetting) {
+      case ThemeColorSetting.blues: 
+        return Color(0XFF9DB2BF);
+      case ThemeColorSetting.beach:
+        return Color(0XFFFFF0DD);  
+    }
+  }
+
+  Color get accentColor {
+    switch (_colorSetting) {
+      case ThemeColorSetting.blues:
+        return Color(0XFF526D82);
+      case ThemeColorSetting.beach:
+        return Color(0XFFE2A16F);  
+    }
+  }
+
+  Color get hightlightColor {
+    switch (_colorSetting) {
+      case ThemeColorSetting.blues:
+        return Color(0XFFDDE6ED);
+      case ThemeColorSetting.beach:
+        return Color(0XFFD1D3D4);  
+    }
+  }
+
+  Color get textColor {
+    switch (_colorSetting) {
+      case ThemeColorSetting.blues:
+        return Color(0XFF27374D);
+      case ThemeColorSetting.beach:
+        return Color(0XFF86B0BD);  
+    }
+  }
+
 
   //Font
   ThemeFontSetting _fontSize = ThemeFontSetting.normal;
@@ -25,9 +70,9 @@ class ThemeModeController extends ChangeNotifier {
   double get resolvedFontSize {
     switch (_fontSize) {
       case ThemeFontSetting.normal:
-        return 24.0;
+        return 20.0;
       case ThemeFontSetting.large:
-        return 48.0;
+        return 36.0;
     }
   }
 

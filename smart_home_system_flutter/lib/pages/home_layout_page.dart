@@ -1,8 +1,10 @@
 // lib/pages/home_layout_page.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/room.dart';
 import '../widgets/grid_painter.dart';
 import '../widgets/app_drawer.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 
 // ---- HomeLayoutPage (main editor screen) ----
 class HomeLayoutPage extends StatefulWidget {
@@ -39,9 +41,12 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<ThemeModeController>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Floor Plan Editor'),
+        title: Text('Floor Plan Editor'),
+        titleTextStyle: TextStyle(fontSize: controller.resolvedFontSize*1.5,),
+        backgroundColor: controller.accentColor,
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -49,14 +54,13 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           ),
         ),
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(),
       body: Column(
         children: [
           // Top toolbox / draggable icons row
           Container(
-            height: 120,
-            color: Colors.grey[200],
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            height: 200,
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 36),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -74,7 +78,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           // Canvas area (fills remaining vertical space)
           Expanded(
             child: Container(
-              color: Colors.grey[100],
+              color: controller.backgroundColor,
               child: LayoutBuilder(builder: (context, constraints) {
                 return GestureDetector(
                   // tap on background to deselect
@@ -316,7 +320,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     return Text(
       label,
       textAlign: TextAlign.center,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
     );
   }
 

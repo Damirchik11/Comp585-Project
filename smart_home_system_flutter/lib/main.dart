@@ -21,11 +21,25 @@ class SmartHomeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<ThemeModeController>(context);
+    final baseLight = ThemeData.light();
+    final baseDark = ThemeData.dark();
 
     return MaterialApp(
       title: 'Smart Home Layout',
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
+      theme: baseLight.copyWith(
+        textTheme: baseLight.textTheme.copyWith(
+          bodyMedium: baseLight.textTheme.bodyMedium?.copyWith(
+        fontSize: controller.resolvedFontSize,
+        color: controller.textColor)),
+        scaffoldBackgroundColor: controller.backgroundColor,
+      ),
+      darkTheme: baseDark.copyWith(
+        textTheme: baseDark.textTheme.copyWith(
+          bodyMedium: baseDark.textTheme.bodyMedium?.copyWith(
+        fontSize: controller.resolvedFontSize,
+        color: controller.hightlightColor,)),
+        scaffoldBackgroundColor: controller.textColor,
+      ),
       themeMode: controller.materialThemeMode,
       initialRoute: '/auth',
       routes: {

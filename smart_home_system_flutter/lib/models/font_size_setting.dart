@@ -1,1 +1,0 @@
-enum ThemeFontSetting { normal, large }
