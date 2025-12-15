@@ -663,29 +663,4 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     final rect = topLeft & deleteBox.size;
     return rect.contains(globalPoint);
   }
-
-  Future<bool?> _showConfirmDeleteDialog(BuildContext context, String label) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete room?'),
-          content: Text(label.isEmpty ? 'Delete this room?' : 'Delete "$label"?'),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
-          ],
-        );
-      },
-    );
-  }
-
-  // Checks whether a global coordinate (screen space) is inside the delete area widget
-  bool _isGlobalPointInDeleteArea(Offset globalPoint) {
-    final deleteBox = _deleteKey.currentContext?.findRenderObject() as RenderBox?;
-    if (deleteBox == null) return false;
-    final topLeft = deleteBox.localToGlobal(Offset.zero);
-    final rect = topLeft & deleteBox.size;
-    return rect.contains(globalPoint);
-  }
 }
