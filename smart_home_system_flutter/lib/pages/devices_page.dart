@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 import '../widgets/app_drawer.dart';
 
 class DevicesPage extends StatefulWidget {
@@ -14,28 +16,32 @@ class _DevicesPageState extends State<DevicesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<ThemeModeController>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Devices')),
+      appBar: AppBar(title: const Text('Devices'),
+        titleTextStyle: TextStyle(fontSize: controller.resolvedFontSize*1.5,),
+        backgroundColor: controller.accentColor,
+      ),
       drawer: const AppDrawer(),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(left: 36, right: 36, top: 36),
             child: Row(
               children: [
                 ElevatedButton.icon(
                   onPressed: _isScanning ? null : _scanForDevices,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Scan for Devices'),
+                  icon: Icon(Icons.search, color: controller.accentColor,),
+                  label: Text('Scan for Devices', style: TextStyle(color: controller.accentColor, fontSize: controller.resolvedFontSize),),
                 ),
                 const SizedBox(width: 16),
-                if (_isScanning) const CircularProgressIndicator(),
+                if (_isScanning) CircularProgressIndicator(color: controller.accentColor),
               ],
             ),
           ),
           Expanded(
             child: _devices.isEmpty
-                ? const Center(child: Text('No devices found'))
+                ? Center(child: Text('No devices found', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),))
                 : ListView.builder(
                     itemCount: _devices.length,
                     itemBuilder: (context, index) {

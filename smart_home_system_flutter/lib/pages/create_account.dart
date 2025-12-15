@@ -1,33 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_home_system/widgets/theme_mode_controller.dart';
-import 'create_account.dart';
 
+List<Map<String, dynamic>> entries =[];
 
-
-class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+class CreateAccountPage extends StatefulWidget {
+  const CreateAccountPage({super.key});
 
   @override
-  State<AuthPage> createState() => _AuthPageState();
+  State<CreateAccountPage> createState() => _CreateAcctState();
+
+  String getName() {
+    return entries[0]["name"];
+  }
+
+  String getEmail(){
+    return entries[0]["email"];
+  }
+
+  String getPass() {
+    return entries[0]["password"];
+  }
+
 }
 
-class _AuthPageState extends State<AuthPage> {
+
+class _CreateAcctState extends State<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordCheckController = TextEditingController();
+  
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<ThemeModeController>(context);
-
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: const Text('Create Account'),
         titleTextStyle: TextStyle(color: controller.hightlightColor, fontSize: controller.resolvedFontSize),
         backgroundColor: controller.accentColor,
         automaticallyImplyLeading: false,
-      ),
+        ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -41,9 +57,22 @@ class _AuthPageState extends State<AuthPage> {
                   const Icon(Icons.home_outlined, size: 80),
                   const SizedBox(height: 24),
                   TextFormField(
+                    controller: _nameController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
+                    decoration: const InputDecoration(
+                      labelText: 'Profile Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Required';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
                     controller: _emailController,
                     style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Email',
                       border: OutlineInputBorder(),
                     ),
@@ -52,11 +81,11 @@ class _AuthPageState extends State<AuthPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   TextFormField(
                     controller: _passwordController,
                     style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Password',
                       border: OutlineInputBorder(),
                     ),
@@ -67,18 +96,33 @@ class _AuthPageState extends State<AuthPage> {
                     },
                   ),
                   const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _passwordCheckController,
+                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
+                    decoration: const InputDecoration(
+                      labelText: 'Reenter Password',
+                      border: OutlineInputBorder(),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Required';
+                      if (value != _passwordController.text) return 'Passwords do not match';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _handleSubmit,
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(60),
                       backgroundColor: controller.accentColor,
                     ),
-                    child: Text('Login', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize))
+                    child: Text('Create Account', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),)
                   ),
                   TextButton(
-                    child: Text('Need an account? Sign up', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize*0.75),),
+                    child: Text('Already have an account? Login', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize*0.75),),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/createAcct');
+                      Navigator.pushReplacementNamed(context, '/auth');
                     },
                   ),
                 ],
@@ -90,11 +134,18 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
+  void saveProfile() {
+    entries.add({
+      "name": _nameController.text,
+      "email": _emailController.text,
+      "password": _passwordController.text,
+    });
+  }
+
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      if (CreateAccountPage().getEmail() == _emailController.text && CreateAccountPage().getPass() == _passwordController.text) {
+      saveProfile();
       Navigator.pushReplacementNamed(context, '/layout');
-      }
     }
   }
 

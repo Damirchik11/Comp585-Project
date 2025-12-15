@@ -8,7 +8,7 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey[300]!
+      ..color = Colors.white
       ..strokeWidth = 0.5;
 
     for (double x = 0; x < size.width; x += cellSize) {
