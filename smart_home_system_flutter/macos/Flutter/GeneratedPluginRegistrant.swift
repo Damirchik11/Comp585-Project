@@ -8,7 +8,7 @@ import Foundation
 import cloud_firestore
 import firebase_auth
 import firebase_core
-import flutter_blue_plus_darwin
+import flutter_blue_plus
 import shared_preferences_foundation
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
