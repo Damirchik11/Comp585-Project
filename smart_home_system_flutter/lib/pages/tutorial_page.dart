@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 import '../widgets/app_drawer.dart';
 
 class TutorialPage extends StatelessWidget {
@@ -6,11 +8,15 @@ class TutorialPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<ThemeModeController>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Tutorial')),
+      appBar: AppBar(title: const Text('Tutorial'),
+        titleTextStyle: TextStyle(fontSize: controller.resolvedFontSize*1.5,),
+        backgroundColor: controller.accentColor,
+      ),
       drawer: const AppDrawer(),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsetsGeometry.only(left: 36, right: 36, top: 36),
         children: [
           _buildVideoSection(),
           const SizedBox(height: 24),
@@ -24,10 +30,7 @@ class TutorialPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Tutorial Videos',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        Text('Tutorial Videos', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Container(
           height: 200,
@@ -40,7 +43,7 @@ class TutorialPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Text('Getting Started with Floor Plan Editor'),
+        Text('Getting Started with Floor Plan Editor'),
       ],
     );
   }
@@ -49,9 +52,7 @@ class TutorialPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Frequently Asked Questions',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        Text('Frequently Asked Questions', style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         _buildFAQItem(
@@ -72,7 +73,7 @@ class TutorialPage extends StatelessWidget {
 
   Widget _buildFAQItem(String question, String answer) {
     return ExpansionTile(
-      title: Text(question, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(question, style: TextStyle(fontSize: ThemeModeController().resolvedFontSize),),
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
