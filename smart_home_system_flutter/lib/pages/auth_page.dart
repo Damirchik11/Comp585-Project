@@ -140,60 +140,13 @@ class _AuthPageState extends State<AuthPage> {
                             onPressed: _handleForgotPassword,
                             child: const Text('Forgot Password?'),
                           ),
-                        ],
-                      ],
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.home_outlined, size: 80),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _emailController,
-                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value?.isEmpty ?? true) return 'Required';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _handleSubmit,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(60),
-                      backgroundColor: controller.accentColor,
-                    ),
-                    child: Text('Login', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize))
-                  ),
-                  TextButton(
-                    child: Text('Need an account? Sign up', style: TextStyle(color: controller.textColor, fontSize: controller.resolvedFontSize*0.75),),
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/createAcct');
-                    },
-                  ),
-                ],
-              ),
-            ),
+                         ],
+                       ],
+                     ),
+                   ),
+                 ),
+               ),
+             ),
     );
   }
 
@@ -283,11 +236,6 @@ class _AuthPageState extends State<AuthPage> {
         _errorMessage = e.toString();
         _isLoading = false;
       });
-  void _handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      if (CreateAccountPage().getEmail() == _emailController.text && CreateAccountPage().getPass() == _passwordController.text) {
-      Navigator.pushReplacementNamed(context, '/layout');
-      }
     }
   }
 

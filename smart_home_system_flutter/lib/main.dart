@@ -11,6 +11,7 @@ import 'pages/settings_page.dart';
 import 'pages/tutorial_page.dart';
 import 'pages/auth_page.dart';
 import 'widgets/loading_widget.dart';
+import 'pages/create_account.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,16 +20,15 @@ void main() async {
   // Enable Firestore offline persistence
   await FirebaseStorageService.enableOfflinePersistence();
   
-  runApp(const SmartHomeApp());
-}
-import 'pages/create_account.dart';
-
-
-
-
-void main() => runApp(ChangeNotifierProvider(
+  runApp(
+    ChangeNotifierProvider(
       create: (_) => ThemeModeController(),
-      child:const SmartHomeApp()));
+      child: const SmartHomeApp(),
+    ),
+  );
+}
+
+
 
 class SmartHomeApp extends StatelessWidget {
   const SmartHomeApp({super.key});
@@ -41,7 +41,6 @@ class SmartHomeApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Smart Home Layout',
-      theme: ThemeData(primarySwatch: Colors.blue),
       // Start with a StreamBuilder to check auth state
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
@@ -62,36 +61,30 @@ class SmartHomeApp extends StatelessWidget {
           return const AuthPage();
         },
       ),
-      routes: {
-        '/home': (context) => const AuthGuard(child: HomeLayoutPage()),
-        '/devices': (context) => const AuthGuard(child: DevicesPage()),
-        '/settings': (context) => const AuthGuard(child: SettingsPage()),
-        '/tutorial': (context) => const AuthGuard(child: TutorialPage()),
-        '/auth': (context) => const AuthPage(),
       theme: baseLight.copyWith(
         textTheme: baseLight.textTheme.copyWith(
           bodyMedium: baseLight.textTheme.bodyMedium?.copyWith(
-        fontSize: controller.resolvedFontSize,
-        color: controller.textColor)),
+            fontSize: controller.resolvedFontSize,
+            color: controller.textColor)),
         scaffoldBackgroundColor: controller.backgroundColor,
       ),
       darkTheme: baseDark.copyWith(
         textTheme: baseDark.textTheme.copyWith(
           bodyMedium: baseDark.textTheme.bodyMedium?.copyWith(
-        fontSize: controller.resolvedFontSize,
-        color: controller.hightlightColor,)),
+            fontSize: controller.resolvedFontSize,
+            color: controller.hightlightColor,)),
         scaffoldBackgroundColor: controller.textColor,
       ),
       themeMode: controller.materialThemeMode,
       initialRoute: '/auth',
       routes: {
         '/auth': (context) => const AuthPage(),
+        '/home': (context) => const AuthGuard(child: HomeLayoutPage()),
         '/layout': (context) => const HomeLayoutPage(),
-        '/devices': (context) => const DevicesPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/tutorial': (context) => const TutorialPage(),
+        '/devices': (context) => const AuthGuard(child: DevicesPage()),
+        '/settings': (context) => const AuthGuard(child: SettingsPage()),
+        '/tutorial': (context) => const AuthGuard(child: TutorialPage()),
         '/createAcct': (context) => const CreateAccountPage(),
-        
       },
     );
   }
