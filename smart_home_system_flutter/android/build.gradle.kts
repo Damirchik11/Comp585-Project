@@ -22,6 +22,25 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    
+    // Force plugins to use correct SDK version to avoid conflicts
+    // Exclude 'app' because it is already evaluated (due to evaluationDependsOn above) and we updated it manually.
+    if (project.name != "app") {
+        afterEvaluate {
+            if (project.extensions.findByName("android") != null) {
+                project.extensions.configure<com.android.build.gradle.BaseExtension>("android") {
+                    compileSdkVersion(36)
+                    defaultConfig {
+                        targetSdkVersion(36)
+                    }
+                    compileOptions {
+                        sourceCompatibility = JavaVersion.VERSION_17
+                        targetCompatibility = JavaVersion.VERSION_17
+                    }
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

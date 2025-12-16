@@ -11,15 +11,24 @@ class CreateAccountPage extends StatefulWidget {
   State<CreateAccountPage> createState() => _CreateAcctState();
 
   String getName() {
-    return entries[0]["name"];
+    if (entries.isNotEmpty) {
+      return entries[0]["name"];
+    }
+    return "User";
   }
 
   String getEmail(){
-    return entries[0]["email"];
+    if (entries.isNotEmpty) {
+      return entries[0]["email"];
+    }
+    return "user@example.com";
   }
 
   String getPass() {
-    return entries[0]["password"];
+    if (entries.isNotEmpty) {
+      return entries[0]["password"];
+    }
+    return "";
   }
 
 }
