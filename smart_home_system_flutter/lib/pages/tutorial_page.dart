@@ -4,7 +4,7 @@ import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 import '../widgets/app_drawer.dart';
 
 class TutorialPage extends StatelessWidget {
-  const TutorialPage({Key? key}) : super(key: key);
+  const TutorialPage({super.key});
 
   @override
   Widget build(BuildContext context) {
