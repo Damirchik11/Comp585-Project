@@ -39,9 +39,9 @@ dependencies:
   shared_preferences: ^2.2.2   # Persist device connections
   
   # Firebase dependencies
-  firebase_core: ^3.15.2        # Firebase Core (required for all Firebase services)
-  firebase_auth: ^5.3.1        # Firebase Authentication
-  cloud_firestore: ^5.4.4      # Cloud Firestore database
+  firebase_core: ^3.8.0        # Firebase Core (required for all Firebase services)
+  firebase_auth: ^5.3.3        # Firebase Authentication
+  cloud_firestore: ^5.5.0      # Cloud Firestore database
   provider: ^6.1.5+1
 
 dev_dependencies:

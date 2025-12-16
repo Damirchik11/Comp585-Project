@@ -229,7 +229,7 @@ class BluetoothService {
     
     // Real Bluetooth connection on mobile
     try {
-      await device.bluetoothDevice?.connect(timeout: const Duration(seconds: 15));
+      await device.bluetoothDevice?.connect();
       await device.bluetoothDevice?.discoverServices();
       return true;
     } catch (e) {
