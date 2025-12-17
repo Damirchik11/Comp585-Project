@@ -102,25 +102,34 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const Divider(),
-          ListTile(
-            title: Text("Color Scheme", style: TextStyle(fontSize: controller.resolvedFontSize),),
-            subtitle: Text(controller.colorSetting == ThemeColorSetting.blues ? "Blues" : "Beach"),
-            trailing: SegmentedButton<ThemeColorSetting>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(
-                  value: ThemeColorSetting.blues,
-                  label: Text('Default', style: TextStyle(fontSize: controller.resolvedFontSize),),
-                ),
-                ButtonSegment(
-                  value: ThemeColorSetting.beach,
-                  label: Text('Beach Vibes', style: TextStyle(fontSize: controller.resolvedFontSize),),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Color Scheme", style: TextStyle(fontSize: controller.resolvedFontSize)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<ThemeColorSetting>(
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: ThemeColorSetting.blues,
+                        label: Text('Default', style: TextStyle(fontSize: controller.resolvedFontSize),),
+                      ),
+                      ButtonSegment(
+                        value: ThemeColorSetting.beach,
+                        label: Text('Beach Vibes', style: TextStyle(fontSize: controller.resolvedFontSize),),
+                      ),
+                    ],
+                    selected: {controller.colorSetting},
+                    onSelectionChanged: (value) {
+                      controller.setColor(value.first);
+                    },
+                  ),
                 ),
               ],
-              selected: {controller.colorSetting},
-              onSelectionChanged: (value) {
-                controller.setColor(value.first);
-              },
             ),
           ),
           const Divider(),
