@@ -121,7 +121,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     final controller = Provider.of<ThemeModeController>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Floor Plan Editor'),
+        title: const Text('Floor Plan Editor'),
         titleTextStyle: TextStyle(fontSize: controller.resolvedFontSize * 1.5),
         backgroundColor: controller.accentColor,
         leading: Builder(
@@ -277,7 +277,9 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                           decoration: BoxDecoration(
                                             color: r.color,
                                             shape: BoxShape.circle,
-                                            border: _movingRoomId == r.id ? Border.all(color: Colors.white, width: 3) : null,
+                                            border: _movingRoomId == r.id
+                                                ? Border.all(color: Colors.white, width: 3)
+                                                : null,
                                           ),
                                           alignment: Alignment.center,
                                           child: _buildLabelText(r.label),
@@ -287,7 +289,9 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                           height: height,
                                           decoration: BoxDecoration(
                                             color: r.color,
-                                            border: _movingRoomId == r.id ? Border.all(color: Colors.white, width: 3) : null,
+                                            border: _movingRoomId == r.id
+                                                ? Border.all(color: Colors.white, width: 3)
+                                                : null,
                                           ),
                                           alignment: Alignment.center,
                                           child: _buildLabelText(r.label),
@@ -309,7 +313,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                           );
                         }).toList(),
 
-                        // Placed devices (top of rooms) — FIXED overflow by removing fixed height
+                        // Placed devices (top of rooms) — overflow-safe
                         ..._placedDevices.map((pd) {
                           final left = pd.gridX * cellSize.toDouble();
                           final top = pd.gridY * cellSize.toDouble();
@@ -329,7 +333,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
                                   minWidth: iconSize + 18,
-                                  maxWidth: 140, // prevents huge labels breaking layout
+                                  maxWidth: 140,
                                 ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -414,12 +418,15 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     );
   }
 
+  // ✅ FIXED: this must display the label (the previous file accidentally returned Text(''))
   Widget _buildLabelText(String label) {
-    if (label.isEmpty) return const SizedBox.shrink();
-    return const Text(
-      '',
+    if (label.trim().isEmpty) return const SizedBox.shrink();
+    return Text(
+      label,
       textAlign: TextAlign.center,
-      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
     );
   }
 
@@ -775,7 +782,6 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     if (idx != -1) {
       final pd = _placedDevices[idx].copyWith(state: newState);
       setState(() => _placedDevices[idx] = pd);
-      // FUTURE: call FirebaseStorageService or BluetoothService to persist/update real device
     }
   }
 
@@ -1011,7 +1017,16 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
       }
     }
 
-    return Room(id: room.id, gridX: 0, gridY: 0, gridW: room.gridW, gridH: room.gridH, color: room.color, isCircle: room.isCircle, label: room.label);
+    return Room(
+      id: room.id,
+      gridX: 0,
+      gridY: 0,
+      gridW: room.gridW,
+      gridH: room.gridH,
+      color: room.color,
+      isCircle: room.isCircle,
+      label: room.label,
+    );
   }
 
   Future<String?> _showEditLabelDialog(BuildContext context, String initial) {
@@ -1021,7 +1036,11 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Edit label'),
-          content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(hintText: 'Room label')),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Room label'),
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
             TextButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: const Text('Save')),
