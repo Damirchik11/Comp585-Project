@@ -122,6 +122,16 @@ class _AuthPageState extends State<AuthPage> {
                         const SizedBox(height: 8),
                         
                         // Toggle login/signup
+                        // Navigation to Create Account Page
+                        TextButton(
+                          onPressed: () {
+                             Navigator.pushReplacementNamed(context, '/createAcct');
+                          },
+                          child: const Text('Need an account? Sign up'),
+                        ),
+                        
+                        // Toggle for Login (removed toggle logic, just show login options if needed, but here we just need to link to sign up)
+                        /*
                         TextButton(
                           onPressed: () {
                             setState(() {
@@ -133,6 +143,7 @@ class _AuthPageState extends State<AuthPage> {
                               ? 'Need an account? Sign up'
                               : 'Already have an account? Login'),
                         ),
+                        */
                         
                         // Forgot password link (only show on login)
                         if (_isLogin) ...[

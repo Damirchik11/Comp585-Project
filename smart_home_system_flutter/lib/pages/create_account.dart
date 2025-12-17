@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_home_system/widgets/theme_mode_controller.dart';
 
 List<Map<String, dynamic>> entries =[];
@@ -151,10 +152,34 @@ class _CreateAcctState extends State<CreateAccountPage> {
     });
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      saveProfile();
-      Navigator.pushReplacementNamed(context, '/layout');
+      try {
+        // Create user in Firebase
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        
+        // Save profile locally (as before)
+        saveProfile();
+
+        // Optional: Update display name in Firebase
+        await FirebaseAuth.instance.currentUser?.updateDisplayName(_nameController.text.trim());
+
+        // Navigate to home
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/layout');
+        }
+      } on FirebaseAuthException catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Registration failed')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
+      }
     }
   }
 
