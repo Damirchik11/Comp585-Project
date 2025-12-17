@@ -138,18 +138,20 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           Container(
             height: 200,
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 36),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDraggableRoom('Square', Colors.blue, 2, 2),
-                const SizedBox(width: 18),
-                _buildDraggableRoom('Rectangle', Colors.green, 3, 2),
-                const SizedBox(width: 18),
-                _buildDraggableRoom('Circle', Colors.orange, 2, 2, isCircle: true),
-                const SizedBox(width: 18),
-                const Spacer(),
-                _buildDevicesPanel(),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDraggableRoom('Square', Colors.blue, 2, 2),
+                  const SizedBox(width: 18),
+                  _buildDraggableRoom('Rectangle', Colors.green, 3, 2),
+                  const SizedBox(width: 18),
+                  _buildDraggableRoom('Circle', Colors.orange, 2, 2, isCircle: true),
+                  const SizedBox(width: 36),
+                  _buildDevicesPanel(),
+                ],
+              ),
             ),
           ),
 
