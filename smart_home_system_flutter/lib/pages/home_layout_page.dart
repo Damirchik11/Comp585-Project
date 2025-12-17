@@ -159,11 +159,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
               color: controller.backgroundColor,
               child: LayoutBuilder(builder: (context, constraints) {
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedRoomId = null;
-                    });
-                  },
+                  onTap: () => setState(() => _selectedRoomId = null),
                   child: SizedBox(
                     key: _canvasKey,
                     width: double.infinity,
@@ -181,7 +177,6 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                           final top = r.gridY * cellSize.toDouble();
                           final width = r.gridW * cellSize.toDouble();
                           final height = r.gridH * cellSize.toDouble();
-                          final isSelected = _selectedRoomId == r.id;
 
                           return Positioned(
                             left: left,
@@ -192,7 +187,9 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                 final newLabel = await _showEditLabelDialog(context, r.label);
                                 if (newLabel != null) {
                                   final idx = _placedRooms.indexWhere((p) => p.id == r.id);
-                                  if (idx != -1) setState(() => _placedRooms[idx] = _placedRooms[idx].copyWith(label: newLabel));
+                                  if (idx != -1) {
+                                    setState(() => _placedRooms[idx] = _placedRooms[idx].copyWith(label: newLabel));
+                                  }
                                 }
                               },
                               onLongPress: () async {
@@ -299,7 +296,9 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                   if (_selectedRoomId == r.id)
                                     Positioned.fill(
                                       child: IgnorePointer(
-                                        child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.black87, width: 2))),
+                                        child: Container(
+                                          decoration: BoxDecoration(border: Border.all(color: Colors.black87, width: 2)),
+                                        ),
                                       ),
                                     ),
 
@@ -310,11 +309,12 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                           );
                         }).toList(),
 
-                        // Placed devices (top of rooms)
+                        // Placed devices (top of rooms) — FIXED overflow by removing fixed height
                         ..._placedDevices.map((pd) {
                           final left = pd.gridX * cellSize.toDouble();
                           final top = pd.gridY * cellSize.toDouble();
-                          final iconSize = 28.0 * pd.iconScale;
+                          final iconSize = 26.0 * pd.iconScale;
+
                           return Positioned(
                             left: left,
                             top: top,
@@ -326,37 +326,42 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                   setState(() => _placedDevices.removeWhere((p) => p.id == pd.id));
                                 }
                               },
-                              child: Container(
-                                width: iconSize + 8,
-                                height: iconSize + 8,
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: iconSize + 18,
+                                  maxWidth: 140, // prevents huge labels breaking layout
                                 ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _getDeviceIcon(pd.device.type),
-                                    const SizedBox(height: 2),
-                                    SizedBox(
-                                      width: iconSize,
-                                      child: Text(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.92),
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconTheme(
+                                        data: IconThemeData(size: iconSize),
+                                        child: _getDeviceIcon(pd.device.type),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
                                         pd.device.name,
+                                        maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 10),
+                                        style: const TextStyle(fontSize: 10, height: 1.1),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           );
                         }).toList(),
 
-                        // delete area (DragTarget) — use Object? here to satisfy generic bound
+                        // delete area (DragTarget)
                         Positioned(
                           right: 16,
                           bottom: 16,
@@ -366,13 +371,10 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                               setState(() => _deleteHover = true);
                               return true;
                             },
-                            onLeave: (data) {
-                              setState(() => _deleteHover = false);
-                            },
+                            onLeave: (data) => setState(() => _deleteHover = false),
                             onAccept: (data) {
-                              // Data could be SmartDevice (from toolbar), PlacedDevice, or an int id
                               if (data is SmartDevice) {
-                                // toolbox device dropped on trash -> ignore
+                                // dragging from toolbar -> ignore
                               } else if (data is PlacedDevice) {
                                 setState(() => _placedDevices.removeWhere((p) => p.id == data.id));
                               } else if (data is int) {
@@ -388,7 +390,11 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                                   color: _deleteHover ? Colors.redAccent : Colors.red,
                                   boxShadow: [
                                     if (_deleteHover)
-                                      BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 10, spreadRadius: 2),
+                                      BoxShadow(
+                                        color: Colors.redAccent.withOpacity(0.4),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
                                   ],
                                 ),
                                 child: const Icon(Icons.delete, color: Colors.white, size: 28),
@@ -410,14 +416,14 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
 
   Widget _buildLabelText(String label) {
     if (label.isEmpty) return const SizedBox.shrink();
-    return Text(
-      label,
+    return const Text(
+      '',
       textAlign: TextAlign.center,
       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
     );
   }
 
-  // Room draggable builder unchanged
+  // Top toolbox draggable builder
   Widget _buildDraggableRoom(String label, Color color, int gridW, int gridH, {bool isCircle = false}) {
     final double px = gridW * cellSize.toDouble();
     final double py = gridH * cellSize.toDouble();
@@ -478,13 +484,12 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
         );
 
         final fitted = _fitRoom(newRoom, maxCols, maxRows);
-
         setState(() => _placedRooms.add(fitted));
       },
     );
   }
 
-  // Devices panel (uses _availableDevices combined from Firestore + Bluetooth)
+  // Devices panel
   Widget _buildDevicesPanel() {
     return SizedBox(
       width: 300,
@@ -513,7 +518,10 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
+              ),
               child: _availableDevices.isEmpty
                   ? const Center(child: Text('No devices available', style: TextStyle(fontSize: 12)))
                   : ListView.builder(
@@ -562,7 +570,9 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                               if (gridY >= maxRows) gridY = maxRows - 1;
 
                               if (_placedRooms.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add rooms first before placing devices.')));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Add rooms first before placing devices.')),
+                                );
                                 return;
                               }
 
@@ -612,14 +622,22 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
           Container(
             margin: const EdgeInsets.only(left: 6),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.orange.shade300)),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.orange.shade300),
+            ),
             child: const Text('SIM', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
           ),
         if (d.isPaired)
           Container(
             margin: const EdgeInsets.only(left: 6),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.green.shade300)),
+            decoration: BoxDecoration(
+              color: Colors.green.shade100,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.green.shade300),
+            ),
             child: const Text('PAIRED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
           ),
       ],
@@ -654,7 +672,6 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     return Offset(centerGridX.toDouble(), centerGridY.toDouble());
   }
 
-  // show small bottom sheet to control device
   void _showDeviceControls(PlacedDevice pd) {
     showModalBottomSheet(
       context: context,
@@ -708,12 +725,24 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      ElevatedButton(onPressed: () { setSheetState(() => state['temperature'] = temp - 1); _updatePlacedDeviceState(pd.id, state); }, child: const Text('-')),
+                      ElevatedButton(
+                        onPressed: () {
+                          setSheetState(() => state['temperature'] = temp - 1);
+                          _updatePlacedDeviceState(pd.id, state);
+                        },
+                        child: const Text('-'),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text('$temp°F', style: const TextStyle(fontSize: 16)),
                       ),
-                      ElevatedButton(onPressed: () { setSheetState(() => state['temperature'] = temp + 1); _updatePlacedDeviceState(pd.id, state); }, child: const Text('+')),
+                      ElevatedButton(
+                        onPressed: () {
+                          setSheetState(() => state['temperature'] = temp + 1);
+                          _updatePlacedDeviceState(pd.id, state);
+                        },
+                        child: const Text('+'),
+                      ),
                     ],
                   ),
                 ],
@@ -769,7 +798,7 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     }
   }
 
-  // Build four corner handles; each returns a Positioned widget for the handle with drag handlers
+  // Build four corner handles
   List<Widget> _buildResizeHandles(Room r, double width, double height) {
     const double handleSize = 12;
     Widget handle(String corner, double left, double top) {
@@ -1018,7 +1047,6 @@ class _HomeLayoutPageState extends State<HomeLayoutPage> {
     );
   }
 
-  // Checks whether a global coordinate (screen space) is inside the delete area widget
   bool _isGlobalPointInDeleteArea(Offset globalPoint) {
     final deleteBox = _deleteKey.currentContext?.findRenderObject() as RenderBox?;
     if (deleteBox == null) return false;
